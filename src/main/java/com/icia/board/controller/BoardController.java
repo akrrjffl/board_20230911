@@ -38,28 +38,36 @@ public class BoardController {
     // /board/list?page=1
     @GetMapping("/list")
     public String findAll(@RequestParam(value = "page", required = false, defaultValue = "1") int page,
+                          @RequestParam(value = "q", required = false, defaultValue = "") String q,
+                          @RequestParam(value = "type", required = false, defaultValue = "boardTitle") String type,
                           Model model) {
-        List<BoardDTO> boardDTOList = boardService.pagingList(page);
-        System.out.println("boardDTOList = " + boardDTOList);
-        model.addAttribute("boardList", boardDTOList);
+        // 검색이든 아니든 필요한 정보: boardList, paging
+        List<BoardDTO> boardDTOList = null;
+        PageDTO pageDTO = null;
 
-        PageDTO pageDTO = boardService.pageNumber(page);
+        // 검색요청인지 아닌지 구분
+        if (q.equals("")) {
+            // 일반 페이지 요청
+            boardDTOList = boardService.pagingList(page);
+            pageDTO = boardService.pageNumber(page);
+        } else {
+            // 검색결과 페이지 요청
+            boardDTOList = boardService.searchList(q, type, page);
+            pageDTO = boardService.searchPageNumber(q, type, page);
+        }
+        model.addAttribute("boardList", boardDTOList);
         model.addAttribute("paging", pageDTO);
-        return "boardPages/boardList";
-    }
-
-    @GetMapping("/search")
-    public String search(@RequestParam("q") String q,
-                         @RequestParam("type") String type,
-                         Model model) {
-        List<BoardDTO> boardDTOList = boardService.searchList(q, type);
-        model.addAttribute("boardList", boardDTOList);
+        model.addAttribute("q", q);
+        model.addAttribute("type", type);
+        model.addAttribute("page", page);
         return "boardPages/boardList";
     }
 
     @GetMapping
     public String findById(@RequestParam("id") Long id,
                            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+                           @RequestParam(value = "q", required = false, defaultValue = "") String q,
+                           @RequestParam(value = "type", required = false, defaultValue = "boardTitle") String type,
                            Model model) {
         // 조회수 처리
         // 데이터 가져오기
@@ -78,7 +86,8 @@ public class BoardController {
         } else {
             model.addAttribute("commentList", commentDTOList);
         }
-
+        model.addAttribute("q", q);
+        model.addAttribute("type", type);
         model.addAttribute("page", page);
         return "boardPages/boardDetail";
     }
